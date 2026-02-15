@@ -1,0 +1,45 @@
+{
+	"schemaVersion": 1,
+	"id": "copper-string-search",
+	"version": "${version}",
+	"name": "Copper String Search",
+	"description": "Filter copper golem item transport using nametags and chest names. Supports configurable aliases and exclusions.",
+	"authors": [
+		"Me!"
+	],
+	"contact": {},
+	"license": "CC0-1.0",
+	"icon": "assets/copper-string-search/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"ninja.trek.copperstring.CopperStringSearch"
+		],
+		"client": [
+			"ninja.trek.copperstring.CopperStringSearchClient"
+		],
+		"modmenu": [
+			"ninja.trek.copperstring.ModMenuIntegration"
+		],
+		"fabric-datagen": [
+			"ninja.trek.copperstring.CopperStringSearchDataGenerator"
+		]
+	},
+	"mixins": [
+		"copper-string-search.mixins.json",
+		{
+			"config": "copper-string-search.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.18.4",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"recommends": {
+		"cloth-config": "*",
+		"modmenu": "*"
+	}
+}

@@ -1,0 +1,15 @@
+{
+	"required": true,
+	"package": "ninja.trek.copperstring.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"CompoundContainerAccessor",
+		"TransportItemsMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}
