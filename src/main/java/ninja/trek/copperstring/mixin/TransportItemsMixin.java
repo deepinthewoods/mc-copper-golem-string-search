@@ -27,11 +27,11 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Mixin(TransportItemsBetweenContainers.class)
 public class TransportItemsMixin {
@@ -40,8 +40,8 @@ public class TransportItemsMixin {
     @Shadow private TransportItemsBetweenContainers.TransportItemState state;
     @Shadow private int ticksSinceReachingTarget;
 
-    @Unique private static final Map<UUID, BlockPos> wildcardPositions = new HashMap<>();
-    @Unique private static final Set<UUID> forceFallbackDeposit = new HashSet<>();
+    @Unique private static final Map<UUID, BlockPos> wildcardPositions = new ConcurrentHashMap<>();
+    @Unique private static final Set<UUID> forceFallbackDeposit = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     /**
      * Wraps the pickupItemFromContainer call inside pickUpItems to only pick up
@@ -135,12 +135,14 @@ public class TransportItemsMixin {
         if (chestName != null) {
             if ("*".equals(chestName) && mob instanceof CopperGolem cg) {
                 UUID golemId = cg.getUUID();
-                if (forceFallbackDeposit.remove(golemId)) {
+                if (forceFallbackDeposit.contains(golemId)) {
                     return true;
                 }
-                BlockPos pos = getContainerBlockPos(container);
-                if (pos != null) {
-                    wildcardPositions.put(golemId, pos);
+                // Use the target's own pos (the half getTransportTarget selected
+                // and the golem pathed to) rather than getContainerBlockPos which
+                // may return the other half of a double chest.
+                if (this.target != null) {
+                    wildcardPositions.put(golemId, this.target.pos());
                 }
             }
             FilterResult chestFilter = ItemFilterCache.getFilterResult(chestName);
@@ -160,13 +162,17 @@ public class TransportItemsMixin {
      */
     @Unique
     private static boolean hasEffectiveItemMatch(Container container, ItemStack effectiveStack) {
+        boolean isEmpty = true;
         for (int i = 0; i < container.getContainerSize(); i++) {
             ItemStack containerStack = container.getItem(i);
-            if (!containerStack.isEmpty() && ItemStack.isSameItem(containerStack, effectiveStack)) {
-                return true;
+            if (!containerStack.isEmpty()) {
+                isEmpty = false;
+                if (ItemStack.isSameItem(containerStack, effectiveStack)) {
+                    return true;
+                }
             }
         }
-        return false;
+        return isEmpty;
     }
 
     /**
@@ -196,6 +202,10 @@ public class TransportItemsMixin {
         this.target = wildcardTarget;
         this.state = TransportItemsBetweenContainers.TransportItemState.TRAVELLING;
         this.ticksSinceReachingTarget = 0;
+        // Clear stale navigation so hasValidTravellingPath creates a fresh path
+        // to the wildcard target instead of using the old path to the previous target.
+        pathfinderMob.getNavigation().stop();
+        pathfinderMob.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
         pathfinderMob.getBrain().eraseMemory(MemoryModuleType.VISITED_BLOCK_POSITIONS);
         pathfinderMob.getBrain().eraseMemory(MemoryModuleType.UNREACHABLE_TRANSPORT_BLOCK_POSITIONS);
         ci.cancel();
@@ -248,27 +258,4 @@ public class TransportItemsMixin {
         return null;
     }
 
-    /**
-     * Gets the BlockPos from a container, handling both single chests
-     * (BaseContainerBlockEntity) and double chests (CompoundContainer).
-     * Returns null if the container's BlockPos cannot be determined.
-     */
-    @Unique
-    private static BlockPos getContainerBlockPos(Container container) {
-        if (container instanceof BaseContainerBlockEntity bcbe) {
-            return bcbe.getBlockPos();
-        }
-        if (container instanceof CompoundContainer cc) {
-            CompoundContainerAccessor accessor = (CompoundContainerAccessor) cc;
-            Container c1 = accessor.getContainer1();
-            if (c1 instanceof BaseContainerBlockEntity bcbe1) {
-                return bcbe1.getBlockPos();
-            }
-            Container c2 = accessor.getContainer2();
-            if (c2 instanceof BaseContainerBlockEntity bcbe2) {
-                return bcbe2.getBlockPos();
-            }
-        }
-        return null;
-    }
 }

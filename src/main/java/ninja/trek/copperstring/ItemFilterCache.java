@@ -4,7 +4,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.alchemy.PotionContents;
@@ -12,7 +11,7 @@ import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
-import net.minecraft.world.level.block.ShulkerBoxBlock;
+import net.minecraft.tags.ItemTags;
 import ninja.trek.copperstring.config.ModConfig;
 
 import java.util.ArrayList;
@@ -223,8 +222,7 @@ public class ItemFilterCache {
      * Otherwise returns the original stack unchanged.
      */
     public static ItemStack getEffectiveStack(ItemStack stack) {
-        if (stack.getItem() instanceof BlockItem blockItem
-                && blockItem.getBlock() instanceof ShulkerBoxBlock) {
+        if (stack.is(ItemTags.SHULKER_BOXES)) {
             ItemContainerContents contents = stack.get(DataComponents.CONTAINER);
             if (contents == null) return stack;
 

@@ -28,6 +28,5 @@ public class CopperStringSearch implements ModInitializer {
 		config = ModConfig.load();
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> ItemFilterCache.clearCache());
 		ServerLifecycleEvents.SERVER_STOPPED.register(server -> ItemFilterCache.clearCache());
-		LOGGER.info("Copper String Search loaded");
 	}
 }
