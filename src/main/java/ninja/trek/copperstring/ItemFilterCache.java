@@ -228,11 +228,12 @@ public class ItemFilterCache {
 
             Item uniformItem = null;
             boolean hasItems = false;
-            for (ItemStack contained : contents.nonEmptyItems()) {
+            for (var contained : contents.nonEmptyItems()) {
                 hasItems = true;
+                Item containedItem = contained.item().value();
                 if (uniformItem == null) {
-                    uniformItem = contained.getItem();
-                } else if (uniformItem != contained.getItem()) {
+                    uniformItem = containedItem;
+                } else if (uniformItem != containedItem) {
                     return stack; // mixed contents
                 }
             }
